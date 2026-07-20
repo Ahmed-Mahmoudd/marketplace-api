@@ -25,5 +25,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/vendors', [VendorAdminController::class, 'index']);
         Route::post('/vendors/{vendor}/approve', [VendorAdminController::class, 'approve']);
         Route::post('/vendors/{vendor}/suspend', [VendorAdminController::class, 'suspend']);
+        Route::post('/vendors/{vendor}/reject', [VendorAdminController::class, 'reject']);
     });
 });

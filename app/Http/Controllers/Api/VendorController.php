@@ -5,29 +5,31 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Vendor\VendorApplyRequest;
 use App\Http\Resources\VendorResource;
-use App\Models\Vendor;
+use App\Services\VendorService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 
 class VendorController extends Controller
 {
+    public function __construct(
+        private VendorService $vendorService
+    ) {}
+
     public function apply(VendorApplyRequest $request)
     {
-        $user = $request->user();
+        try {
+            $vendor = $this->vendorService->apply(
+                $request->user(),
+                $request->validated()
+            );
 
-        if ($user->vendor()->exists()) {
-            return $this->error('You already have a vendor application on file.', 422);
+            return $this->success(
+                new VendorResource($vendor),
+                'Vendor application submitted.',
+                201
+            );
+        } catch (\DomainException $e) {
+            return $this->error($e->getMessage(), 422);
         }
-
-        $vendor = Vendor::create([
-            'user_id' => $user->id,
-            'store_name' => $request->validated('store_name'),
-            'store_slug' => Str::slug($request->validated('store_name')) . '-' . Str::lower(Str::random(6)),
-            'status' => Vendor::STATUS_PENDING,
-            'payout_details' => $request->validated('payout_details'),
-        ]);
-
-        return $this->success(new VendorResource($vendor), 'Vendor application submitted.', 201);
     }
 
     public function show(Request $request)
