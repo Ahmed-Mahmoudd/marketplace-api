@@ -28,7 +28,7 @@ class AuthController extends Controller
         $token = $user->createToken('api')->plainTextToken;
 
         return $this->success([
-            'user' => new UserResource($user->load('roles')),
+            'user' => new UserResource($user->load(['roles', 'vendor'])),
             'token' => $token,
         ], 'Registered successfully.', 201);
     }
@@ -44,7 +44,7 @@ class AuthController extends Controller
         $token = $user->createToken('api')->plainTextToken;
 
         return $this->success([
-            'user' => new UserResource($user->load('roles')),
+            'user' => new UserResource($user->load(['roles', 'vendor'])),
             'token' => $token,
         ], 'Logged in successfully.');
     }

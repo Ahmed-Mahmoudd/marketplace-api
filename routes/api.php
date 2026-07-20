@@ -8,6 +8,12 @@ use Illuminate\Support\Facades\Route;
 Route::post('/auth/register', [AuthController::class, 'register']);
 Route::post('/auth/login', [AuthController::class, 'login']);
 
+// Route::post('/test-idempotency', function () {
+//     return response()->json([
+//         'message' => 'Controller executed'
+//     ]);
+// })->middleware('idempotency');
+
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     Route::get('/auth/me', [AuthController::class, 'me']);

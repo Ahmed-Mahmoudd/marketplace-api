@@ -10,14 +10,14 @@ class VendorResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id' => $this->id,
-            'store_name' => $this->store_name,
-            'store_slug' => $this->store_slug,
-            'status' => $this->status,
-            'commission_rate' => $this->commission_rate,
-            'approved_at' => $this->approved_at,
-            'user' => new UserResource($this->whenLoaded('user')),
-            'created_at' => $this->created_at,
+            'id' => $this->id,                                                        // رقم طلب/محل البائع
+            'store_name' => $this->store_name,                                        // اسم المتجر
+            'store_slug' => $this->store_slug,                                        // الرابط المختصر للمتجر
+            'status' => $this->status,                                                // pending / approved / suspended
+            'commission_rate' => $this->commission_rate,                              // نسبة العمولة
+            'approved_at' => $this->approved_at,                                      // تاريخ الموافقة (لو اتوافق عليه)
+            'user' => $this->whenLoaded('user', fn() => new UserResource($this->user)), // بيانات اليوزر صاحب المتجر ده لو متحمّلة
+            'created_at' => $this->created_at,                                        // تاريخ تقديم الطلب
         ];
     }
 }

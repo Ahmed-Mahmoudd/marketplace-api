@@ -22,7 +22,8 @@ class VendorController extends Controller
         $vendor = Vendor::create([
             'user_id' => $user->id,
             'store_name' => $request->validated('store_name'),
-            'store_slug' => Str::slug($request->validated('store_name')).'-'.Str::lower(Str::random(6)),
+            'store_slug' => Str::slug($request->validated('store_name')) . '-' . Str::lower(Str::random(6)),
+            'status' => Vendor::STATUS_PENDING,
             'payout_details' => $request->validated('payout_details'),
         ]);
 

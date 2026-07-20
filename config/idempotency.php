@@ -2,6 +2,6 @@
 
 return [
 
-  'ttl' => env('IDEMPOTENCY_TTL', 24),
+  'ttl' => (int) env('IDEMPOTENCY_TTL', 24),
 
 ];
