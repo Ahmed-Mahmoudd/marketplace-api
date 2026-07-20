@@ -1,59 +1,54 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Marketplace API
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Multi-vendor e-commerce backend (Laravel). See the SRS for full requirements, schema, and phased build plan.
 
-## About Laravel
+## Setup
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+```bash
+composer install
+cp .env.example .env
+php artisan key:generate
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+# Publish spatie/laravel-permission's migration + config (not auto-loaded like Sanctum's)
+php artisan vendor:publish --provider="Spatie\Permission\PermissionServiceProvider"
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+php artisan migrate
+php artisan db:seed   # creates roles + an admin@marketplace.test account
+```
 
-## Learning Laravel
+`.env` — set `DB_CONNECTION` etc. to a real database for local dev (sqlite is fine to start: `DB_CONNECTION=sqlite`, `touch database/database.sqlite`).
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+## Tests
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+```bash
+php artisan test
+```
 
-## Laravel Sponsors
+## Phase 1 — Auth & Roles (done)
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+- Sanctum token auth: `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/auth/me`
+- Roles via `spatie/laravel-permission`: `admin`, `vendor`, `customer`. Every new user starts as `customer`.
+- Vendor onboarding: `POST /api/vendor/apply` (idempotent — requires `Idempotency-Key` header), `GET /api/vendor/me`
+- Admin moderation: `GET /api/admin/vendors`, `POST /api/admin/vendors/{vendor}/approve`, `POST /api/admin/vendors/{vendor}/suspend` — the `vendor` role is granted only on approval, not on application.
+- Generic `idempotency` middleware (`app/Http/Middleware/EnsureIdempotency.php`) backed by the `idempotency_keys` table — reused unchanged from Phase 4 (checkout) onward.
+- `VendorPolicy` scopes a vendor's own profile to themselves; admin routes are gated separately via `role:admin` middleware.
 
-### Premium Partners
+### Trying it locally
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+```bash
+# Register
+curl -X POST http://localhost:8000/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Doda","email":"doda@example.com","password":"password123","password_confirmation":"password123"}'
 
-## Contributing
+# Apply as vendor (use the token from register/login)
+curl -X POST http://localhost:8000/api/vendor/apply \
+  -H "Authorization: Bearer <token>" \
+  -H "Idempotency-Key: $(uuidgen)" \
+  -H "Content-Type: application/json" \
+  -d '{"store_name":"Doda Store"}'
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
-
-## Code of Conduct
-
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+# Approve as admin (login as admin@marketplace.test, then:)
+curl -X POST http://localhost:8000/api/admin/vendors/1/approve \
+  -H "Authorization: Bearer <admin_token>"
+```
