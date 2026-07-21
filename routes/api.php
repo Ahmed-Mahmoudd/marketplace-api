@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\Admin\VendorAdminController;
 use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\Vendor\ProductController;
+use App\Http\Controllers\Api\Vendor\ProductImageController;
 use App\Http\Controllers\Api\VendorController;
 use Illuminate\Support\Facades\Route;
 
@@ -27,6 +28,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/products/{product}', [ProductController::class, 'show']);
         Route::put('/products/{product}', [ProductController::class, 'update']);
         Route::delete('/products/{product}', [ProductController::class, 'destroy']);
+
+        Route::post('/products/{product}/images', [ProductImageController::class, 'store']);
+        Route::delete('/products/{product}/images/{image}', [ProductImageController::class, 'destroy']);
+        Route::patch('/products/{product}/images/{image}/primary', [ProductImageController::class, 'primary']);
     });
 
     Route::prefix('admin')->middleware('role:admin')->group(function () {

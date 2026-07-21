@@ -18,7 +18,7 @@ class ProductService
    */
   public function listForVendor(Vendor $vendor, array $filters): LengthAwarePaginator
   {
-    $query = $vendor->products()->with(['category', 'vendor']);
+    $query = $vendor->products()->with(['category', 'vendor', 'images']);
 
     $this->applySearch($query, $filters['q'] ?? null);
     $this->applyStatus($query, $filters['status'] ?? null);
@@ -39,7 +39,7 @@ class ProductService
       'status' => $data['status'] ?? Product::STATUS_ACTIVE,
     ]);
 
-    return $product->load(['category', 'vendor']);
+    return $product->load(['category', 'vendor', 'images']);
   }
 
   public function update(Product $product, array $data): Product
@@ -62,12 +62,73 @@ class ProductService
 
     $product->update($attributes);
 
-    return $product->fresh(['category', 'vendor']);
+    return $product->fresh(['category', 'vendor', 'images']);
   }
 
   public function delete(Product $product): void
   {
     $product->delete();
+  }
+
+  /**
+   * Storefront listing: active products from approved vendors and active
+   * categories only, with search + category/price filters + sort + pagination.
+   * All filters combine with AND.
+   *
+   * @param  array{q?: string, category?: string, min_price?: string, max_price?: string, sort?: string}  $filters
+   */
+  public function listPublic(array $filters): LengthAwarePaginator
+  {
+    $query = Product::query()->with(['category', 'vendor', 'images']);
+
+    $this->applyPublicScope($query);
+    $this->applySearch($query, $filters['q'] ?? null);
+    $this->applyCategoryFilter($query, $filters['category'] ?? null);
+    $this->applyPriceFilter($query, $filters['min_price'] ?? null, $filters['max_price'] ?? null);
+    $this->applySort($query, $filters['sort'] ?? null);
+
+    return $query->paginate(self::PER_PAGE)->withQueryString();
+  }
+
+  /**
+   * Storefront product detail. 404s (via ModelNotFoundException) if the
+   * product is inactive, its vendor isn't approved, or its category is
+   * disabled — same as if it didn't exist at all, publicly.
+   */
+  public function showPublicBySlug(string $slug): Product
+  {
+    $query = Product::query()->with(['category', 'vendor', 'images'])->where('slug', $slug);
+
+    $this->applyPublicScope($query);
+
+    return $query->firstOrFail();
+  }
+
+  private function applyPublicScope(Builder $query): void
+  {
+    $query->where('status', Product::STATUS_ACTIVE)
+      ->whereHas('vendor', fn(Builder $q) => $q->where('status', Vendor::STATUS_APPROVED))
+      ->whereHas('category', fn(Builder $q) => $q->where('is_active', true));
+  }
+
+  private function applyCategoryFilter(Builder $query, ?string $categorySlug): void
+  {
+    if (! $categorySlug) {
+      return;
+    }
+
+    $query->whereHas('category', fn(Builder $q) => $q->where('slug', $categorySlug));
+  }
+
+  private function applyPriceFilter(Builder $query, ?string $minPrice, ?string $maxPrice): void
+  {
+    if ($minPrice !== null && $minPrice !== '') {
+      $query->where('price', '>=', $minPrice);
+    }
+
+    if ($maxPrice !== null && $maxPrice !== '') {
+      $query->where('price', '<=', $maxPrice);
+    }
   }
 
   private function applySearch(Builder|HasMany $query, ?string $search): void
