@@ -18,8 +18,8 @@ class AuthService
         'name' => $data['name'],
         'email' => $data['email'],
         'password' => Hash::make($data['password']),
-        'gender' => $data['gender'],
-        'city' => $data['city'],
+        'gender' => $data['gender'] ?? null,
+        'city' => $data['city'] ?? null,
       ]);
 
       $user->assignRole('customer');
