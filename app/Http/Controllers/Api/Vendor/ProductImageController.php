@@ -32,22 +32,15 @@ class ProductImageController extends Controller
     );
   }
 
-  public function destroy(Product $product, ProductImage $image)
+  public function setPrimary(Product $product, ProductImage $image)
   {
     $this->authorize('update', $product);
-    $this->ensureImageBelongsToProduct($product, $image);
 
-    $this->productImageService->delete($product, $image);
+    if ($image->product_id !== $product->id) {
+      return $this->error('Image not found.', 404);
+    }
 
-    return $this->success(null, 'Image deleted.');
-  }
-
-  public function primary(Product $product, ProductImage $image)
-  {
-    $this->authorize('update', $product);
-    $this->ensureImageBelongsToProduct($product, $image);
-
-    $image = $this->productImageService->makePrimary($product, $image);
+    $image = $this->productImageService->setPrimary($product, $image);
 
     return $this->success(
       new ProductImageResource($image),
@@ -55,8 +48,16 @@ class ProductImageController extends Controller
     );
   }
 
-  private function ensureImageBelongsToProduct(Product $product, ProductImage $image): void
+  public function destroy(Product $product, ProductImage $image)
   {
-    abort_if($image->product_id !== $product->id, 404);
+    $this->authorize('update', $product);
+
+    if ($image->product_id !== $product->id) {
+      return $this->error('Image not found.', 404);
+    }
+
+    $this->productImageService->delete($product, $image);
+
+    return $this->success(null, 'Image deleted.');
   }
 }
