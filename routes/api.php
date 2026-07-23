@@ -5,7 +5,10 @@ use App\Http\Controllers\Api\Admin\VendorAdminController;
 use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\CategoryController;
+use App\Http\Controllers\Api\CheckoutController;
+use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\ProductController;
+use App\Http\Controllers\Api\Vendor\OrderController as VendorOrderController;
 use App\Http\Controllers\Api\Vendor\ProductController as VendorProductController;
 use App\Http\Controllers\Api\Vendor\ProductImageController;
 use App\Http\Controllers\Api\VendorController;
@@ -33,7 +36,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/cart/items/{item}', [CartController::class, 'destroyItem']);
     Route::delete('/cart', [CartController::class, 'clear']);
 
+    Route::post('/checkout', [CheckoutController::class, 'store'])->middleware('idempotency');
+    Route::get('/orders', [OrderController::class, 'index']);
+    Route::get('/orders/{order}', [OrderController::class, 'show']);
+    Route::post('/orders/{order}/cancel', [OrderController::class, 'cancel']);
+
     Route::prefix('vendor')->middleware('role:vendor')->group(function () {
+        Route::get('/orders', [VendorOrderController::class, 'index']);
+        Route::get('/orders/{order}', [VendorOrderController::class, 'show']);
+
         Route::get('/products', [VendorProductController::class, 'index']);
         Route::post('/products', [VendorProductController::class, 'store']);
         Route::get('/products/{product}', [VendorProductController::class, 'show']);
