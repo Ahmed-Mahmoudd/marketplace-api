@@ -10,8 +10,14 @@ export interface VendorApplyInput {
   }
 }
 
+import { generateIdempotencyKey } from '@/lib/utils'
+
 export async function applyForVendor(input: VendorApplyInput): Promise<Vendor> {
-  const { data } = await apiClient.post<ApiResponse<Vendor>>('/vendor/apply', input)
+  const { data } = await apiClient.post<ApiResponse<Vendor>>('/vendor/apply', input, {
+    headers: {
+      'Idempotency-Key': generateIdempotencyKey(),
+    },
+  })
   return data.data
 }
 

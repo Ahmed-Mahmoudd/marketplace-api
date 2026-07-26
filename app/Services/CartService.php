@@ -18,7 +18,7 @@ class CartService
 
   public function view(User $user): Cart
   {
-    return $this->getOrCreate($user)->load('items.product');
+    return $this->getOrCreate($user)->load(['items.product.images', 'items.product.vendor']);
   }
 
   public function addItem(User $user, int $productId, int $quantity): CartItem
@@ -41,7 +41,7 @@ class CartService
     if ($existing) {
       $existing->update(['quantity' => $requestedTotal]);
 
-      return $existing->fresh('product');
+      return $existing->fresh(['product.images', 'product.vendor']);
     }
 
     $item = $cart->items()->create([
@@ -49,7 +49,7 @@ class CartService
       'quantity' => $requestedTotal,
     ]);
 
-    return $item->load('product');
+    return $item->load(['product.images', 'product.vendor']);
   }
 
   public function updateItem(CartItem $item, int $quantity): CartItem
@@ -60,7 +60,7 @@ class CartService
 
     $item->update(['quantity' => $quantity]);
 
-    return $item->fresh('product');
+    return $item->fresh(['product.images', 'product.vendor']);
   }
 
   public function removeItem(CartItem $item): void

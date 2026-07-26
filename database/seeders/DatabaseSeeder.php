@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\Category;
 use App\Models\User;
 use App\Models\Vendor;
+use App\Models\Product;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -81,7 +82,25 @@ class DatabaseSeeder extends Seeder
 
         // Categories
         if (Category::count() == 0) {
-            Category::factory()->count(5)->create();
+            $categories = Category::factory()->count(5)->create();
+        } else {
+            $categories = Category::all();
+        }
+
+        // Products
+        if (Product::count() == 0) {
+            $vendors = Vendor::all();
+            foreach ($vendors as $vendor) {
+                Product::factory()->count(5)->create([
+                    'vendor_id' => $vendor->id,
+                    'category_id' => fn() => $categories->random()->id,
+                ])->each(function ($product) {
+                    $product->images()->create([
+                        'path' => 'products/dummy.jpg',
+                        'is_primary' => true,
+                    ]);
+                });
+            }
         }
     }
 }
