@@ -1,7 +1,9 @@
 import { NavLink, Link } from 'react-router-dom'
 import { LogOut, Menu, ShoppingBag, Store, User, X } from 'lucide-react'
 import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '@/context'
+import { getCart } from '@/api/cart'
 import { Button } from '@/components/ui/Button'
 import { cn } from '@/lib/utils'
 
@@ -14,6 +16,13 @@ const navLinkClass = ({ isActive }: { isActive: boolean }) =>
 export function Header() {
   const { user, isAuthenticated, logout, hasRole } = useAuth()
   const [mobileOpen, setMobileOpen] = useState(false)
+
+  const cartQuery = useQuery({
+    queryKey: ['cart'],
+    queryFn: getCart,
+    enabled: isAuthenticated,
+  })
+  const cartCount = cartQuery.data?.items_count ?? 0
 
   const handleLogout = async () => {
     await logout()
@@ -45,7 +54,11 @@ export function Header() {
                   <NavLink to="/vendor" className={navLinkClass}>
                     Vendor
                   </NavLink>
-                ) : null}
+                ) : (
+                  <NavLink to="/vendor/apply" className={navLinkClass}>
+                    Sell on Marketplace
+                  </NavLink>
+                )}
                 {hasRole('admin') ? (
                   <NavLink to="/admin" className={navLinkClass}>
                     Admin
@@ -61,10 +74,15 @@ export function Header() {
             <>
               <NavLink
                 to="/cart"
-                className="inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-muted hover:bg-surface-muted hover:text-foreground"
+                className="relative inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-muted hover:bg-surface-muted hover:text-foreground"
               >
                 <ShoppingBag className="size-4" />
                 Cart
+                {cartCount > 0 ? (
+                  <span className="inline-flex size-5 items-center justify-center rounded-full bg-accent text-[11px] font-semibold text-accent-foreground">
+                    {cartCount > 9 ? '9+' : cartCount}
+                  </span>
+                ) : null}
               </NavLink>
               <div className="hidden items-center gap-2 border-l border-border pl-3 lg:flex">
                 <User className="size-4 text-muted" />
@@ -113,7 +131,7 @@ export function Header() {
             {isAuthenticated ? (
               <>
                 <NavLink to="/cart" className={navLinkClass} onClick={() => setMobileOpen(false)}>
-                  Cart
+                  Cart{cartCount > 0 ? ` (${cartCount})` : ''}
                 </NavLink>
                 <NavLink to="/orders" className={navLinkClass} onClick={() => setMobileOpen(false)}>
                   Orders
@@ -122,7 +140,11 @@ export function Header() {
                   <NavLink to="/vendor" className={navLinkClass} onClick={() => setMobileOpen(false)}>
                     Vendor
                   </NavLink>
-                ) : null}
+                ) : (
+                  <NavLink to="/vendor/apply" className={navLinkClass} onClick={() => setMobileOpen(false)}>
+                    Sell on Marketplace
+                  </NavLink>
+                )}
                 {hasRole('admin') ? (
                   <NavLink to="/admin" className={navLinkClass} onClick={() => setMobileOpen(false)}>
                     Admin

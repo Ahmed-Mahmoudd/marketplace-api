@@ -8,12 +8,30 @@ use App\Http\Requests\Category\UpdateCategoryRequest;
 use App\Http\Resources\CategoryResource;
 use App\Models\Category;
 use App\Services\CategoryService;
+use Illuminate\Http\Request;
 
 class CategoryAdminController extends Controller
 {
   public function __construct(
     private CategoryService $categoryService
   ) {}
+
+  public function index(Request $request)
+  {
+    $categories = $this->categoryService->adminList(
+      $request->only(['q', 'sort', 'per_page'])
+    );
+
+    return $this->success([
+      'items' => CategoryResource::collection($categories->items()),
+      'meta' => [
+        'current_page' => $categories->currentPage(),
+        'last_page' => $categories->lastPage(),
+        'per_page' => $categories->perPage(),
+        'total' => $categories->total(),
+      ],
+    ]);
+  }
 
   public function store(StoreCategoryRequest $request)
   {

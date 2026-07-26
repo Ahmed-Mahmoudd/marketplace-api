@@ -62,6 +62,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/vendors/{vendor}/suspend', [VendorAdminController::class, 'suspend']);
         Route::post('/vendors/{vendor}/reject', [VendorAdminController::class, 'reject']);
 
+        Route::get('/categories', [CategoryAdminController::class, 'index']);
         Route::post('/categories', [CategoryAdminController::class, 'store']);
         Route::put('/categories/{category}', [CategoryAdminController::class, 'update']);
         Route::delete('/categories/{category}', [CategoryAdminController::class, 'destroy']);

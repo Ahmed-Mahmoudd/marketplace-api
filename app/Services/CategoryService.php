@@ -26,6 +26,26 @@ class CategoryService
     return $query->paginate(self::PER_PAGE)->withQueryString();
   }
 
+  /**
+   * Admin catalog listing: all categories regardless of is_active,
+   * with search + sort + pagination. Used by the admin category dashboard
+   * so disabled categories remain visible and manageable.
+   *
+   * @param  array{q?: string, sort?: string, per_page?: int}  $filters
+   */
+  public function adminList(array $filters): LengthAwarePaginator
+  {
+    $query = Category::query();
+
+    $this->applySearch($query, $filters['q'] ?? null);
+    $this->applySort($query, $filters['sort'] ?? null);
+
+    $perPage = min((int) ($filters['per_page'] ?? self::PER_PAGE), 100);
+    $perPage = $perPage > 0 ? $perPage : self::PER_PAGE;
+
+    return $query->paginate($perPage)->withQueryString();
+  }
+
   public function findBySlug(string $slug, bool $onlyActive = true): Category
   {
     return Category::query()
