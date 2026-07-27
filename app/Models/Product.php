@@ -11,7 +11,7 @@ class Product extends Model
 {
   use HasFactory;
 
-  public const STATUS_ACTIVE = 'active';
+  public const STATUS_ACTIVE   = 'active';
   public const STATUS_INACTIVE = 'inactive';
 
   public const STATUSES = [
@@ -48,5 +48,10 @@ class Product extends Model
   public function images(): HasMany
   {
     return $this->hasMany(ProductImage::class)->orderByDesc('is_primary')->orderBy('id');
+  }
+
+  public function reviews(): HasMany
+  {
+    return $this->hasMany(Review::class)->latest();
   }
 }

@@ -45,7 +45,7 @@ class OrderService
         $this->assertStockAvailable($product, $item->quantity);
 
         $lineItems[] = [
-          'product' => $product,
+          'product'  => $product,
           'quantity' => $item->quantity,
         ];
       }
@@ -55,27 +55,27 @@ class OrderService
       );
 
       $order = Order::create([
-        'order_number' => $this->uniqueOrderNumber(),
-        'user_id' => $user->id,
-        'status' => Order::STATUS_PENDING,
+        'order_number'   => $this->uniqueOrderNumber(),
+        'user_id'        => $user->id,
+        'status'         => Order::STATUS_PENDING,
         'payment_method' => Order::PAYMENT_METHOD_COD,
         'payment_status' => Order::PAYMENT_STATUS_PENDING,
-        'subtotal' => $subtotal,
-        'total' => $subtotal,
+        'subtotal'       => $subtotal,
+        'total'          => $subtotal,
       ]);
 
       foreach ($lineItems as $line) {
-        $product = $line['product'];
+        $product  = $line['product'];
         $quantity = $line['quantity'];
         $unitPrice = $product->price;
 
         $order->items()->create([
-          'product_id' => $product->id,
-          'vendor_id' => $product->vendor_id,
+          'product_id'   => $product->id,
+          'vendor_id'    => $product->vendor_id,
           'product_name' => $product->name,
-          'unit_price' => $unitPrice,
-          'quantity' => $quantity,
-          'subtotal' => round($unitPrice * $quantity, 2),
+          'unit_price'   => $unitPrice,
+          'quantity'     => $quantity,
+          'subtotal'     => round($unitPrice * $quantity, 2),
         ]);
 
         $product->decrement('stock', $quantity);
@@ -87,10 +87,15 @@ class OrderService
     });
   }
 
+  /**
+   * Customer-facing cancel: only allowed while the order is still cancellable
+   * (pending or confirmed). Stock is always restored because it was deducted
+   * at checkout regardless of the subsequent status changes.
+   */
   public function cancel(Order $order): Order
   {
-    if (! $order->isPending()) {
-      throw new \DomainException('Only pending orders can be cancelled.');
+    if (! $order->isCancellable()) {
+      throw new \DomainException('Only pending or confirmed orders can be cancelled.');
     }
 
     return DB::transaction(function () use ($order) {
@@ -101,6 +106,37 @@ class OrderService
       }
 
       $order->update(['status' => Order::STATUS_CANCELLED]);
+
+      return $order->fresh(['items.product.category', 'items.product.vendor', 'items.product.images', 'items.vendor', 'user']);
+    });
+  }
+
+  /**
+   * Vendor/admin status update. Validates the transition and enforces business
+   * rules. Stock is only restored when transitioning to cancelled (if the order
+   * was not already processed past confirmed, which shouldn't happen given the
+   * transition rules — but we restore unconditionally since stock was always
+   * deducted at checkout).
+   */
+  public function updateStatus(Order $order, string $newStatus): Order
+  {
+    if (! $order->canTransitionTo($newStatus)) {
+      throw new \DomainException(
+        "Cannot change order status from \"{$order->status}\" to \"{$newStatus}\"."
+      );
+    }
+
+    return DB::transaction(function () use ($order, $newStatus) {
+      if ($newStatus === Order::STATUS_CANCELLED) {
+        // Restore stock (same logic as cancel())
+        $order->load('items.product');
+
+        foreach ($order->items as $item) {
+          $item->product->increment('stock', $item->quantity);
+        }
+      }
+
+      $order->update(['status' => $newStatus]);
 
       return $order->fresh(['items.product.category', 'items.product.vendor', 'items.product.images', 'items.vendor', 'user']);
     });

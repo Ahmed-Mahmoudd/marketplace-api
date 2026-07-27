@@ -1,5 +1,5 @@
 import { apiClient } from './client'
-import type { ApiResponse, PaginatedData, Product, ProductImage, Vendor, VendorOrder } from '@/types'
+import type { ApiResponse, PaginatedData, Product, ProductImage, Vendor, VendorOrder, OrderStatus } from '@/types'
 import type { ProductSort } from './products'
 
 export interface VendorApplyInput {
@@ -138,5 +138,16 @@ export async function listVendorOrders(
 
 export async function getVendorOrder(id: number | string): Promise<VendorOrder> {
   const { data } = await apiClient.get<ApiResponse<VendorOrder>>(`/vendor/orders/${id}`)
+  return data.data
+}
+
+export async function updateVendorOrderStatus(
+  id: number | string,
+  status: OrderStatus,
+): Promise<VendorOrder> {
+  const { data } = await apiClient.patch<ApiResponse<VendorOrder>>(
+    `/vendor/orders/${id}/status`,
+    { status },
+  )
   return data.data
 }

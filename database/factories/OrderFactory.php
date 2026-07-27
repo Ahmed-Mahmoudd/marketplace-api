@@ -28,4 +28,35 @@ class OrderFactory extends Factory
       'total' => $subtotal,
     ];
   }
+
+  public function pending(): static
+  {
+    return $this->state(['status' => Order::STATUS_PENDING]);
+  }
+
+  public function confirmed(): static
+  {
+    return $this->state(['status' => Order::STATUS_CONFIRMED]);
+  }
+
+  public function processing(): static
+  {
+    return $this->state(['status' => Order::STATUS_PROCESSING]);
+  }
+
+  public function shipped(): static
+  {
+    return $this->state(['status' => Order::STATUS_SHIPPED]);
+  }
+
+  public function delivered(): static
+  {
+    return $this->state(['status' => Order::STATUS_DELIVERED]);
+  }
+
+  public function cancelled(): static
+  {
+    return $this->state(['status' => Order::STATUS_CANCELLED]);
+  }
 }
+

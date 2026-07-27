@@ -10,10 +10,23 @@ import { Pagination } from '@/components/ui/Pagination'
 import { PageLoader } from '@/components/ui/Spinner'
 import { Button } from '@/components/ui/Button'
 import { formatPrice } from '@/lib/utils'
-import type { Order } from '@/types'
+import type { OrderStatus } from '@/types'
 
-function statusVariant(status: Order['status']) {
-  return status === 'pending' ? 'success' : 'muted'
+function statusVariant(status: OrderStatus) {
+  switch (status) {
+    case 'pending':
+      return 'warning'
+    case 'confirmed':
+      return 'default'
+    case 'processing':
+      return 'default'
+    case 'shipped':
+      return 'default'
+    case 'delivered':
+      return 'success'
+    case 'cancelled':
+      return 'muted'
+  }
 }
 
 export function OrdersPage() {

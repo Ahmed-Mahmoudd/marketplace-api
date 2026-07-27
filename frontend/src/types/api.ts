@@ -59,6 +59,8 @@ export interface PublicProduct {
   category?: Category
   vendor?: VendorSummary
   images?: ProductImage[]
+  average_rating?: number | null
+  reviews_count?: number
   created_at?: string
 }
 
@@ -93,10 +95,18 @@ export interface OrderItem {
   vendor?: VendorSummary
 }
 
+export type OrderStatus =
+  | 'pending'
+  | 'confirmed'
+  | 'processing'
+  | 'shipped'
+  | 'delivered'
+  | 'cancelled'
+
 export interface Order {
   id: number
   order_number: string
-  status: 'pending' | 'cancelled'
+  status: OrderStatus
   payment_method: 'cod'
   payment_status: 'pending'
   subtotal: string
@@ -110,7 +120,7 @@ export interface Order {
 export interface VendorOrder {
   id: number
   order_number: string
-  status: 'pending' | 'cancelled'
+  status: OrderStatus
   payment_method: 'cod'
   payment_status: 'pending'
   items?: OrderItem[]
@@ -122,6 +132,18 @@ export interface VendorOrder {
     email: string
   }
   created_at: string
+}
+
+export interface Review {
+  id: number
+  rating: number
+  comment: string | null
+  user: {
+    id: number
+    name: string
+  }
+  created_at: string
+  updated_at: string
 }
 
 export interface User {

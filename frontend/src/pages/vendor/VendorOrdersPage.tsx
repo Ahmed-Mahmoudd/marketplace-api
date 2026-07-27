@@ -9,10 +9,23 @@ import { Alert, EmptyState } from '@/components/ui/Alert'
 import { Pagination } from '@/components/ui/Pagination'
 import { PageLoader } from '@/components/ui/Spinner'
 import { formatPrice } from '@/lib/utils'
-import type { VendorOrder } from '@/types'
+import type { OrderStatus } from '@/types'
 
-function statusVariant(status: VendorOrder['status']) {
-  return status === 'pending' ? 'success' : 'muted'
+function statusVariant(status: OrderStatus) {
+  switch (status) {
+    case 'pending':
+      return 'warning'
+    case 'confirmed':
+      return 'default'
+    case 'processing':
+      return 'default'
+    case 'shipped':
+      return 'default'
+    case 'delivered':
+      return 'success'
+    case 'cancelled':
+      return 'muted'
+  }
 }
 
 export function VendorOrdersPage() {

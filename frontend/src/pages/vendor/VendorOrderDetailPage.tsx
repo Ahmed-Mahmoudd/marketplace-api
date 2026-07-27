@@ -1,21 +1,65 @@
+import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ChevronLeft, ImageOff } from 'lucide-react'
-import { getVendorOrder } from '@/api/vendor'
+import { getVendorOrder, updateVendorOrderStatus } from '@/api/vendor'
 import { getErrorMessage } from '@/api/client'
 import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { Alert } from '@/components/ui/Alert'
+import { Button } from '@/components/ui/Button'
+import { Select } from '@/components/ui/Select'
 import { PageLoader } from '@/components/ui/Spinner'
 import { formatPrice } from '@/lib/utils'
+import type { OrderStatus } from '@/types'
+
+function statusVariant(status: OrderStatus) {
+  switch (status) {
+    case 'pending':    return 'warning' as const
+    case 'confirmed':  return 'default' as const
+    case 'processing': return 'default' as const
+    case 'shipped':    return 'default' as const
+    case 'delivered':  return 'success' as const
+    case 'cancelled':  return 'muted' as const
+  }
+}
+
+const STATUS_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
+  pending:    ['confirmed', 'cancelled'],
+  confirmed:  ['processing', 'cancelled'],
+  processing: ['shipped'],
+  shipped:    ['delivered'],
+  delivered:  [],
+  cancelled:  [],
+}
+
+const STATUS_LABELS: Record<OrderStatus, string> = {
+  pending:    'Pending',
+  confirmed:  'Confirmed',
+  processing: 'Processing',
+  shipped:    'Shipped',
+  delivered:  'Delivered',
+  cancelled:  'Cancelled',
+}
 
 export function VendorOrderDetailPage() {
   const { id } = useParams<{ id: string }>()
+  const queryClient = useQueryClient()
+  const [selectedStatus, setSelectedStatus] = useState<OrderStatus | ''>('')
 
   const orderQuery = useQuery({
     queryKey: ['vendor-order', id],
     queryFn: () => getVendorOrder(id as string),
     enabled: Boolean(id),
+  })
+
+  const updateStatusMutation = useMutation({
+    mutationFn: (status: OrderStatus) => updateVendorOrderStatus(id as string, status),
+    onSuccess: () => {
+      setSelectedStatus('')
+      void queryClient.invalidateQueries({ queryKey: ['vendor-order', id] })
+      void queryClient.invalidateQueries({ queryKey: ['vendor-orders'] })
+    },
   })
 
   if (orderQuery.isLoading) {
@@ -44,6 +88,15 @@ export function VendorOrderDetailPage() {
   const order = orderQuery.data
   if (!order) return null
 
+  const nextStatuses = STATUS_TRANSITIONS[order.status]
+  const canUpdateStatus = nextStatuses.length > 0
+
+  function handleStatusUpdate() {
+    if (selectedStatus) {
+      updateStatusMutation.mutate(selectedStatus)
+    }
+  }
+
   return (
     <div className="max-w-2xl space-y-6">
       <Link
@@ -66,10 +119,51 @@ export function VendorOrderDetailPage() {
             })}
           </p>
         </div>
-        <Badge variant={order.status === 'pending' ? 'success' : 'muted'} className="capitalize">
+        <Badge variant={statusVariant(order.status)} className="capitalize">
           {order.status}
         </Badge>
       </div>
+
+      {/* Status update panel */}
+      {canUpdateStatus ? (
+        <Card className="p-5">
+          <h3 className="mb-3 text-sm font-semibold text-foreground">Update order status</h3>
+          {updateStatusMutation.isError ? (
+            <Alert
+              className="mb-3"
+              message={getErrorMessage(updateStatusMutation.error, 'Unable to update status.')}
+            />
+          ) : null}
+          <div className="flex items-end gap-3">
+            <div className="flex-1">
+              <Select
+                id="order-status-select"
+                label="New status"
+                value={selectedStatus}
+                onChange={(e) => setSelectedStatus(e.target.value as OrderStatus)}
+              >
+                <option value="">Select status…</option>
+                {nextStatuses.map((s) => (
+                  <option key={s} value={s}>
+                    {STATUS_LABELS[s]}
+                  </option>
+                ))}
+              </Select>
+            </div>
+            <Button
+              onClick={handleStatusUpdate}
+              disabled={!selectedStatus}
+              isLoading={updateStatusMutation.isPending}
+            >
+              Update
+            </Button>
+          </div>
+        </Card>
+      ) : (
+        <div className="rounded-md border border-border bg-surface-muted px-4 py-3 text-sm text-muted">
+          This order is in a terminal state ({order.status}) and cannot be updated.
+        </div>
+      )}
 
       {order.customer ? (
         <Card className="p-5">

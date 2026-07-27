@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\CheckoutController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\ProductController;
+use App\Http\Controllers\Api\ReviewController;
 use App\Http\Controllers\Api\Vendor\OrderController as VendorOrderController;
 use App\Http\Controllers\Api\Vendor\ProductController as VendorProductController;
 use App\Http\Controllers\Api\Vendor\ProductImageController;
@@ -22,6 +23,7 @@ Route::get('/categories/{slug}', [CategoryController::class, 'show']);
 
 Route::get('/products', [ProductController::class, 'index']);
 Route::get('/products/{slug}', [ProductController::class, 'show']);
+Route::get('/products/{slug}/reviews', [ReviewController::class, 'index']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/auth/logout', [AuthController::class, 'logout']);
@@ -38,12 +40,17 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/checkout', [CheckoutController::class, 'store'])->middleware('idempotency');
     Route::get('/orders', [OrderController::class, 'index']);
+
+    Route::post('/products/{slug}/reviews', [ReviewController::class, 'store']);
+    Route::put('/reviews/{review}', [ReviewController::class, 'update']);
+    Route::delete('/reviews/{review}', [ReviewController::class, 'destroy']);
     Route::get('/orders/{order}', [OrderController::class, 'show']);
     Route::post('/orders/{order}/cancel', [OrderController::class, 'cancel']);
 
     Route::prefix('vendor')->middleware('role:vendor')->group(function () {
         Route::get('/orders', [VendorOrderController::class, 'index']);
         Route::get('/orders/{order}', [VendorOrderController::class, 'show']);
+        Route::patch('/orders/{order}/status', [VendorOrderController::class, 'updateStatus']);
 
         Route::get('/products', [VendorProductController::class, 'index']);
         Route::post('/products', [VendorProductController::class, 'store']);

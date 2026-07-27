@@ -79,7 +79,9 @@ class ProductService
    */
   public function listPublic(array $filters): LengthAwarePaginator
   {
-    $query = Product::query()->with(['category', 'vendor', 'images']);
+    $query = Product::query()->with(['category', 'vendor', 'images'])
+      ->withAvg('reviews', 'rating')
+      ->withCount('reviews');
 
     $this->applyPublicScope($query);
     $this->applySearch($query, $filters['q'] ?? null);
@@ -97,7 +99,11 @@ class ProductService
    */
   public function showPublicBySlug(string $slug): Product
   {
-    $query = Product::query()->with(['category', 'vendor', 'images'])->where('slug', $slug);
+    $query = Product::query()
+      ->with(['category', 'vendor', 'images'])
+      ->withAvg('reviews', 'rating')
+      ->withCount('reviews')
+      ->where('slug', $slug);
 
     $this->applyPublicScope($query);
 
