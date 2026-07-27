@@ -55,7 +55,7 @@ class ProductController extends Controller
     $this->authorize('view', $product);
 
     return $this->success(
-      new ProductResource($product->load(['category', 'vendor']))
+      new ProductResource($product->load(['category', 'vendor', 'images']))
     );
   }
 

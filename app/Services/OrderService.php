@@ -83,7 +83,7 @@ class OrderService
 
       $cart->items()->delete();
 
-      return $order->load(['items.product', 'items.vendor', 'user']);
+      return $order->load(['items.product.category', 'items.product.vendor', 'items.product.images', 'items.vendor', 'user']);
     });
   }
 
@@ -102,7 +102,7 @@ class OrderService
 
       $order->update(['status' => Order::STATUS_CANCELLED]);
 
-      return $order->fresh(['items.product', 'items.vendor', 'user']);
+      return $order->fresh(['items.product.category', 'items.product.vendor', 'items.product.images', 'items.vendor', 'user']);
     });
   }
 
@@ -110,14 +110,14 @@ class OrderService
   {
     return Order::query()
       ->where('user_id', $user->id)
-      ->with(['items.product', 'items.vendor'])
+      ->with(['items.product.category', 'items.product.vendor', 'items.product.images', 'items.vendor'])
       ->latest()
       ->paginate(self::PER_PAGE);
   }
 
   public function showForCustomer(Order $order): Order
   {
-    return $order->load(['items.product', 'items.vendor', 'user']);
+    return $order->load(['items.product.category', 'items.product.vendor', 'items.product.images', 'items.vendor', 'user']);
   }
 
   public function listForVendor(Vendor $vendor): LengthAwarePaginator
@@ -126,7 +126,8 @@ class OrderService
       ->whereHas('items', fn(Builder $query) => $query->where('vendor_id', $vendor->id))
       ->with([
         'user',
-        'items' => fn($query) => $query->where('vendor_id', $vendor->id)->with('product'),
+        'items' => fn($query) => $query->where('vendor_id', $vendor->id)
+          ->with(['product.category', 'product.vendor', 'product.images']),
       ])
       ->latest()
       ->paginate(self::PER_PAGE);
@@ -142,7 +143,8 @@ class OrderService
 
     return $order->load([
       'user',
-      'items' => fn($query) => $query->where('vendor_id', $vendor->id)->with('product'),
+      'items' => fn($query) => $query->where('vendor_id', $vendor->id)
+        ->with(['product.category', 'product.vendor', 'product.images']),
     ]);
   }
 
