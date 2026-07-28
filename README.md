@@ -52,3 +52,29 @@ curl -X POST http://localhost:8000/api/vendor/apply \
 curl -X POST http://localhost:8000/api/admin/vendors/1/approve \
   -H "Authorization: Bearer <admin_token>"
 ```
+
+## Presentation-ready demo catalog
+
+The database seeder now creates a curated marketplace catalog using the same 10 categories found in `products.csv`:
+
+- Clothing
+- Toys
+- Pet Supplies
+- Beauty
+- Electronics
+- Home & Kitchen
+- Books
+- Automotive
+- Groceries
+- Sports
+
+It seeds 30 realistic products across Vendor A and Vendor B and stores local product artwork under `database/seeders/assets/products/` so the storefront has working images immediately after a fresh seed.
+
+After a fresh database reset:
+
+```bash
+php artisan migrate:fresh --seed
+php artisan storage:link
+```
+
+The demo images are local seed fixtures for presentation/testing. Real vendor uploads continue to use the existing product-image upload flow.

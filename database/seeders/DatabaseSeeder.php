@@ -2,15 +2,12 @@
 
 namespace Database\Seeders;
 
-use App\Models\Category;
 use App\Models\Order;
-use App\Models\OrderItem;
 use App\Models\Review;
 use App\Models\User;
 use App\Models\Vendor;
 use App\Models\Product;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class DatabaseSeeder extends Seeder
@@ -85,36 +82,8 @@ class DatabaseSeeder extends Seeder
 
         $customer->assignRole('customer');
 
-        // Categories
-        if (Category::count() == 0) {
-            $categories = Category::factory()->count(5)->create();
-        } else {
-            $categories = Category::all();
-        }
-
-        // Products
-        if (Product::count() == 0) {
-            // Real placeholder JPEG bytes (not a renamed text file), so the
-            // seeded products actually render an image in the storefront
-            // instead of a broken <img> icon.
-            $placeholder = file_get_contents(__DIR__ . '/assets/placeholder.jpg');
-
-            $vendors = Vendor::all();
-            foreach ($vendors as $vendor) {
-                Product::factory()->count(5)->create([
-                    'vendor_id' => $vendor->id,
-                    'category_id' => fn() => $categories->random()->id,
-                ])->each(function ($product) use ($placeholder) {
-                    $path = "products/seed-{$product->id}.jpg";
-                    Storage::disk('public')->put($path, $placeholder);
-
-                    $product->images()->create([
-                        'path' => $path,
-                        'is_primary' => true,
-                    ]);
-                });
-            }
-        }
+        // Demo catalog: realistic categories/products with local presentation-ready images.
+        $this->call(DemoCatalogSeeder::class);
 
         // Seed orders with various statuses for the customer
         if (Order::count() == 0) {
