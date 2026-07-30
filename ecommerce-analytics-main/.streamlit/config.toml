@@ -1,0 +1,20 @@
+[theme]
+primaryColor = "#7C3AED"
+backgroundColor = "#0F0F17"
+secondaryBackgroundColor = "#1A1A27"
+textColor = "#F3F4F6"
+font = "sans serif"
+
+[server]
+# The storefront embeds this app in an iframe on a different origin
+# (localhost:5174 -> localhost:8501). Streamlit's CORS and XSRF checks reject
+# the websocket connection across origins, so both are relaxed to allow it.
+#
+# Trade-off worth knowing: with XSRF protection off, this app should not be
+# exposed publicly as-is. It is acceptable here because the dashboard has no
+# state-changing endpoints of its own — it only reads, and every read is
+# authorised server-side by the vendor's bearer token. For a public
+# deployment, serve both apps from one origin (a reverse proxy putting the
+# dashboard under /analytics) and turn these back on.
+enableCORS = false
+enableXsrfProtection = false
